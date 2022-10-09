@@ -9,11 +9,18 @@ from .utils import Micro, env_to_dict, make_resource_addr
 
 
 class DetaClient:
-    def __init__(self, access_token: str, space_id: int):
-        self.space_id = space_id
+    def __init__(self, access_token: str):
         self.access_token = access_token
         self.base_url = "https://v1.deta.sh"
-
+        extras = self.__extras()
+        self.space_id = extras["spaceID"]
+        self.username = extras["name"]
+        self.role = extras["role"]
+    
+    def __extras(self):
+        path = "/spaces/"
+        return self._request(path=path, method="GET").json()[0]
+        
     def _request(
         self,
         path: str,
@@ -103,8 +110,32 @@ class DetaClient:
         micro_id, micro_account, micro_region = micro_info["id"], micro_info["account"], micro_info["region"]
         path = f"/viewer/archives/{micro_id}"
         headers = {"X-Resource-Addr": make_resource_addr(micro_account, micro_region)}
-        # TODO: handle later
+        # TODO: handle archieve later
         return self._request(path=path, method="GET", headers=headers).content
+    
+    def delete_base(self, base: str, project: str = "default") -> Dict[str, Any]:
+        path = f"/spaces/{self.username}/projects/{project}/bases/{base}"
+        return self._request(path=path, method="DELETE").json()
+    
+    def delete_drive(self, drive: str, project: str = "default") -> Dict[str, Any]:
+        # path = f"/spaces/{self.username}/projects/{project}/drives/{drive}"
+        # return self._request(path=path, method="DELETE").json()
+        raise NotImplementedError("Drive deletion is not yet implemented.")
+    
+    def delete_micro(self, micro_id: str) -> Dict[str, Any]:
+        path = f"/programs/{micro_id}"
+        return self._request(path=path, method="DELETE").json()
+    
+    def delete_project(self, project_id: str) -> Dict[str, Any]:
+        # path = f"/spaces/{self.space_id}/projects/{project_id}"
+        # return self._request(path=path, method="DELETE").json()
+        raise NotImplementedError("Project deletion is not yet implemented.")
+
+    @property
+    def spaces(self) -> List[Dict[str, Any]]:
+        path = "/spaces/"
+        return self._request(path=path, method="GET").json()
+
     
 
 
