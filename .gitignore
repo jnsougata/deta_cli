@@ -1,4 +1,4 @@
 main.py
-deta_client/__pycache__/
+deta_internals/__pycache__/
 .env
 *.json
