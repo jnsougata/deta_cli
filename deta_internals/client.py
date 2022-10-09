@@ -12,14 +12,17 @@ class DetaClient:
     def __init__(self, access_token: str):
         self.access_token = access_token
         self.base_url = "https://v1.deta.sh"
-        extras = self.__extras()
-        self.space_id = extras["spaceID"]
-        self.username = extras["name"]
-        self.role = extras["role"]
+        self.space_id = None
+        self.username = None
+        self.role = None
+        self.__fill_extras()
     
-    def __extras(self):
+    def __fill_extras(self):
         path = "/spaces/"
-        return self._request(path=path, method="GET").json()[0]
+        options = self._request(path=path, method="GET").json()[0]
+        self.space_id = options["spaceID"]
+        self.username = options["name"]
+        self.role = options["role"]
         
     def _request(
         self,
