@@ -2,3 +2,4 @@ main.py
 deta_internals/__pycache__/
 .env
 *.json
+check.py

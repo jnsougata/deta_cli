@@ -1,10 +1,12 @@
 import os
+import sys
 import base64
-from typing import Dict, Any
-from dataclasses import dataclass, field
+from typing import Dict
 
-@dataclass(frozen=False)
+
 class Micro:
+
+    # for type hinting
     id: str
     space: int
     group: str
@@ -26,6 +28,10 @@ class Micro:
     path_alias: str
     project: str
     custom_domains: str
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
 
 def env_to_dict(env_path: os.PathLike) -> Dict[str, str]:
     with open(env_path, "r") as f:

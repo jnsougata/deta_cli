@@ -1,7 +1,6 @@
 import os
 import time
 import json
-import base64
 import requests
 from .sign import singature
 from typing import Dict, Any, Union, List, Optional
@@ -9,8 +8,9 @@ from .utils import Micro, env_to_dict, make_resource_addr
 
 
 class DetaClient:
-    def __init__(self, access_token: str):
-        self.access_token = access_token
+    def __init__(self, access_token: Optional[str] = None):
+        self.access_token = access_token or os.getenv("DETA_ACCESS_TOKEN")
+        assert self.access_token, "You must provide an access token."
         self.base_url = "https://v1.deta.sh"
         self.space_id = None
         self.username = None
@@ -54,7 +54,7 @@ class DetaClient:
         path = f"/spaces/{self.space_id}/projects"
         return self._request(path=path, method="GET").json()
     
-    def new(self, micro_name: str, project_name: str = "default") -> Dict[str, Any]:
+    def new_micro(self, micro_name: str, project_name: str = "default") -> Dict[str, Any]:
         runtime = "python3.9"
         path = "/programs/"
         body = {
@@ -63,38 +63,22 @@ class DetaClient:
             "name": micro_name,
             "runtime": runtime
         }
-        info = self._request(path=path, method="POST", body=body).json()
-        if info.get("errors"):
-            raise ValueError("a micro already exists with the name: " + micro_name)
-        if os.path.exists(f"{micro_name}.json"):
-            raise ValueError("a micro already exists here...")
-        with open(f"{micro_name}.json", "w") as f:
-            json.dump(info, f, indent=4)
-        return info 
+        return self._request(path=path, method="POST", body=body).json()
     
-    def update(
+    def update_env(
         self,
-        micro_info_json: os.PathLike,
+        micro_info: Dict[str, Any],
         *, 
         new_name: Optional[str] = None,
         path_to_env: Optional[os.PathLike] = None,
     ) -> Dict[str, Any]:
-        with open(micro_info_json, "r") as f:
-            info = json.load(f)
-        
-        micro = Micro(**info)
-
+        micro = Micro(**micro_info)
         if path_to_env and new_name:
             raise ValueError("You can only update the name or the env_path at a time, not both.")
-        
         if new_name:
             path = f"/programs/{micro.id}"
             body = {"name": new_name}
             resp = self._request(path=path, method="PATCH", body=body)
-            if resp.status_code == 200:
-                micro.name = new_name
-                with open(micro_info_json, "w") as f:
-                    json.dump(micro.__dict__, f, indent=4)
             return resp.json()
         
         if path_to_env:
@@ -108,7 +92,7 @@ class DetaClient:
         path = f"/spaces/{self.space_id}/projects/{project}/programs/{micro_name}"
         return self._request(path=path, method="GET").json()
     
-    def clone(self, micro_name: str, project_name: str = "default") -> bytes:
+    def clone_micro(self, micro_name: str, project_name: str = "default") -> bytes:
         micro_info = self.get_micro_info(micro_name, project_name)
         micro_id, micro_account, micro_region = micro_info["id"], micro_info["account"], micro_info["region"]
         path = f"/viewer/archives/{micro_id}"
@@ -138,7 +122,54 @@ class DetaClient:
     def spaces(self) -> List[Dict[str, Any]]:
         path = "/spaces/"
         return self._request(path=path, method="GET").json()
+    
+    def deploy(self, micro_info: Dict[str, Any], src_path: str) -> Dict[str, Any]:
+        micro = Micro(**micro_info)
+        patcher_path = f"/patcher/"
+        headers = {"X-Resource-Addr": make_resource_addr(micro.account, micro.region)}
+        
+        files = {}
+        for root, _, filenames in os.walk(src_path):
+            for filename in filenames:
+                # ignore files that begin with '.'
+                if filename[0] == '.':
+                    continue
+                file_path = os.path.join(root, filename)
+                with open(file_path, "rb") as f:
+                    files[file_path] = f.read().decode("UTF-8", "ignore")
+        body = {
+            "pid": micro.id,
+            "change": files,
+        }
+        # TODO: broken
+        return self._request(path=patcher_path, method="POST", body=body, headers=headers).json()
+    
+    def add_deps(
+        self, 
+        micro_id: str, 
+        dependencies: List[str], 
+        ) -> Dict[str, Any]:
+        path = f"/pigeon/commands"
+        command = "pip install " + " ".join(dependencies)
+        body = {
+            "program_id": micro_id,
+            "command": command,
+        }
+        return self._request(path=path, method="POST", body=body).json()
 
+    def remove_deps(
+        self, 
+        micro_id: str, 
+        dependencies: List[str], 
+        ) -> Dict[str, Any]:
+        path = f"/pigeon/commands"
+        command = "pip uninstall " + " ".join(dependencies)
+        body = {
+            "program_id": micro_id,
+            "command": command,
+        }
+        return self._request(path=path, method="POST", body=body).json()
+    
     
 
 
