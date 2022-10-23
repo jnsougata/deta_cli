@@ -1,1 +1,1 @@
-# deta-client-api
+# deta-cli-api
