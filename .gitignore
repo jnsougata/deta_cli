@@ -1,5 +1,5 @@
 main.py
-deta_internals/__pycache__/
+deta_cli/__pycache__/
 .env
 *.json
 check.py

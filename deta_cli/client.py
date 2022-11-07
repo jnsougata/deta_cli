@@ -32,7 +32,6 @@ class DetaClient:
         query: dict = {},
         body: Any = None,
         content_type: str = "application/json",
-        needs_auth: bool=False,
     ) -> requests.Response:
         timestamp = str(int(time.time()))
         raw_body = json.dumps(body) if body else ""
@@ -54,6 +53,27 @@ class DetaClient:
         path = f"/spaces/{self.space_id}/projects"
         return self._request(path=path, method="GET").json()
     
+    def bases(self, project_id: str) -> Dict[str, Any]:
+        path = f"/spaces/{self.space_id}/projects/{project_id}/bases"
+        return self._request(path=path, method="GET").json()
+    
+    @classmethod
+    def drives(cls, project_key: str) -> Dict[str, Any]:
+        project_id = project_key.split("_")[0]
+        path = f"https://drive.deta.sh/v1/{project_id}/?last="
+        headers = {
+            "X-Api-Key": project_key,
+        }
+        return requests.request(method="GET", url=path, headers=headers).json()
+    
+    def project_keys(self, project_id: str) -> Dict[str, Any]:
+        path = f"/projects/{project_id}/keys"
+        return self._request(path=path, method="GET").json()
+    
+    def get_key(self, project_id: str):
+        path = f"/projects/{project_id}/keys"
+        return self._request(path=path, method="POST").json()
+
     def new_micro(self, micro_name: str, project_name: str = "default") -> Dict[str, Any]:
         runtime = "python3.9"
         path = "/programs/"
@@ -65,7 +85,7 @@ class DetaClient:
         }
         return self._request(path=path, method="POST", body=body).json()
     
-    def update_env(
+    def update(
         self,
         micro_info: Dict[str, Any],
         *, 
@@ -104,11 +124,6 @@ class DetaClient:
         path = f"/spaces/{self.username}/projects/{project}/bases/{base}"
         return self._request(path=path, method="DELETE").json()
     
-    def delete_drive(self, drive: str, project: str = "default") -> Dict[str, Any]:
-        # path = f"/spaces/{self.username}/projects/{project}/drives/{drive}"
-        # return self._request(path=path, method="DELETE").json()
-        raise NotImplementedError("Drive deletion is not yet implemented.")
-    
     def delete_micro(self, micro_id: str) -> Dict[str, Any]:
         path = f"/programs/{micro_id}"
         return self._request(path=path, method="DELETE").json()
@@ -118,7 +133,6 @@ class DetaClient:
         # return self._request(path=path, method="DELETE").json()
         raise NotImplementedError("Project deletion is not yet implemented.")
 
-    @property
     def spaces(self) -> List[Dict[str, Any]]:
         path = "/spaces/"
         return self._request(path=path, method="GET").json()
