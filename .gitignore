@@ -3,3 +3,4 @@ deta_cli/__pycache__/
 .env
 *.json
 check.py
+abcx.py

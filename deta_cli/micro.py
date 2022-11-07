@@ -1,5 +1,5 @@
 import os
-import secrets
+import base64
 from .https import request
 from typing import Dict, Any, List, Optional
 from .utils import env_to_dict, make_resource_addr
@@ -90,13 +90,28 @@ class Micro:
         }
         return request(access_token=self._access_token,path=path, method="POST", body=body).json()
 
-    def deploy(self, *, changed_files: List[str], deleted_files: List[str]) -> Dict[str, Any]:
-        changes = {file: secrets.token_hex(32) for file in changed_files}
+    def deploy(
+        self, 
+        *, 
+        scripts: List[str], 
+        deleted_files: List[str] = None,
+        binary_files: List[str] = None,
+        ) -> Dict[str, Any]:
         body = {
             "pid": self.id,
-            "change": changes,
-            "delete": deleted_files,
+            "change": {script: open(script, "r").read() for script in scripts},
         }
-        path = f"/patcher/"
-        headers = {"X-Resource-Addr": make_resource_addr(self.account, self.region)}
-        return self._request(path=path, method="POST", body=body, headers=headers).json()
+        if deleted_files and isinstance(deleted_files, list):
+            body["delete"] = deleted_files
+        if binary_files and isinstance(binary_files, list):
+            for media_file in binary_files:
+                pass
+                # body["change"][media_file] = base64.b64encode(open(media_file,'rb').read()).decode()
+
+        return request(
+            access_token=self._access_token,
+            path=f"/patcher/",
+            method="POST", 
+            body=body, 
+            headers={"X-Resource-Addr": make_resource_addr(self.account, self.region)}
+        ).json()

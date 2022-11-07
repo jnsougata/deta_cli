@@ -1,36 +1,7 @@
 import os
 import sys
 import base64
-from typing import Dict
-
-
-class Micro:
-
-    # for type hinting
-    id: str
-    space: int
-    group: str
-    name: str
-    role: str
-    code: str
-    path: str
-    runtime: str
-    lib: str
-    account: str
-    region: str
-    memory: int
-    timeout: int
-    created: str
-    http_auth: bool
-    log_level: str
-    api_key: bool
-    forked_from: str
-    path_alias: str
-    project: str
-    custom_domains: str
-
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+from typing import Dict, List
 
 
 def env_to_dict(env_path: os.PathLike) -> Dict[str, str]:
@@ -42,3 +13,6 @@ def env_to_dict(env_path: os.PathLike) -> Dict[str, str]:
 
 def make_resource_addr(account: str, region: str) -> str:
     return base64.b64encode(f"aws:{account}:{region}".encode("UTF-8")).decode("UTF-8")
+
+def file_to_base64(content: bytes) -> str:
+    return base64.b64encode(content).decode("UTF-8")
