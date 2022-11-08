@@ -1,8 +1,8 @@
 import os
-import base64
+import time
+from .utils import *
 from .https import request
 from typing import Dict, Any, List, Optional
-from .utils import *
 
 
 class Micro:
@@ -115,7 +115,37 @@ class Micro:
         ).json()
     
     def set_alias(self, alias: str) -> Dict[str, Any]:
-        path = f"/programs/{self.id}/alias"
-        return request(access_token=self._access_token,path=path, method="PATCH", body={"alias": alias}).json()
+        return request(
+            access_token=self._access_token,
+            path=f"/programs/{self.id}/alias", 
+            method="PATCH", 
+            body={"alias": alias}
+            ).json()
     
+    def enable_visor(self) -> Dict[str, Any]:
+        return request(
+            access_token=self._access_token,
+            path=f"/programs/{self.id}/log-level", 
+            method="PATCH", 
+            body={"log_level": "debug"}
+        ).json()
+    
+    def disable_visor(self) -> Dict[str, Any]:
+        return request(
+            access_token=self._access_token,
+            path=f"/programs/{self.id}/log-level", 
+            method="PATCH", 
+            body={"log_level": "off"}
+        ).json()
+    
+    def logs(self, *, start: int = 0, end: int = 100) -> Dict[str, Any]:
+        # current_time = int(time.time())
+        # start_time = (current_time - 1800) * 1000 
+        # end_time = current_time * 1000
+        # return request(
+            # access_token=self._access_token,
+            # path=f"/programs/{self.id}/logs/?start={start_time}&end={end_time}&last_token= ",
+            # method="GET", 
+        # ).json()
+        raise NotImplementedError
     
