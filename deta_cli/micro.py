@@ -2,7 +2,7 @@ import os
 import base64
 from .https import request
 from typing import Dict, Any, List, Optional
-from .utils import env_to_dict, make_resource_addr
+from .utils import *
 
 
 class Micro:
@@ -99,14 +99,12 @@ class Micro:
         ) -> Dict[str, Any]:
         body = {
             "pid": self.id,
-            "change": {script: open(script, "r").read() for script in scripts},
+            "change": {fp: read_script(fp) for fp in scripts},
         }
         if deleted_files and isinstance(deleted_files, list):
             body["delete"] = deleted_files
         if binary_files and isinstance(binary_files, list):
-            for media_file in binary_files:
-                pass
-                # body["change"][media_file] = base64.b64encode(open(media_file,'rb').read()).decode()
+            body["binary"] = {fp: binary_to_base64(fp) for fp in binary_files}
 
         return request(
             access_token=self._access_token,
@@ -115,3 +113,9 @@ class Micro:
             body=body, 
             headers={"X-Resource-Addr": make_resource_addr(self.account, self.region)}
         ).json()
+    
+    def set_alias(self, alias: str) -> Dict[str, Any]:
+        path = f"/programs/{self.id}/alias"
+        return request(access_token=self._access_token,path=path, method="PATCH", body={"alias": alias}).json()
+    
+    
