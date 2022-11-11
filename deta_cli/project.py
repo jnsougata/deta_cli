@@ -18,7 +18,7 @@ class Project:
     
     def delete_base(self, base_name: str) -> Dict[str, Any]:
         path = f"/spaces/{self.username}/projects/{self.name}/bases/{base_name}"
-        return self._request(path=path, method="DELETE").json()
+        return request(access_token=self.access_token, path=path, method="DELETE").json()
     
     def keys(self) -> Dict[str, Any]:
         path = f"/projects/{self.id}/keys"
